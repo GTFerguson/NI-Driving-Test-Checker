@@ -72,15 +72,7 @@ def reserve_date():
 	reserve_btn = find_element(By.ID, 'reservebtn')	
 
 
-if __name__ == "__main__":
-	print("Program Starting...")
-	# Setup our Chrome driver for Selenium
-	driver_path = 'chromedriver.exe'
-	service = Service(driver_path)
-	driver = webdriver.Chrome(service=service)
-
-	startup_dva_site(driver)
-
+def get_gmail_auth():
 	gmc = GMailChecker()
 	gmc.load_creds()
 
@@ -94,19 +86,32 @@ if __name__ == "__main__":
 
 	auth_code = gmc.get_auth_code(latest_email[0]["id"])	
 	gmc.mark_as_read(latest_email[0]["id"])
+	return auth_code
+
+# Finds a button by id and clicks it, just makes main cleaner
+def click_btn(d, btn_id):
+	d.find_element(By.ID, btn_id).click()
+	change_apt_button.click()
+
+if __name__ == "__main__":
+	print("Program Starting...")
+	# Setup our Chrome driver for Selenium
+	driver_path = 'chromedriver.exe'
+	service = Service(driver_path)
+	driver = webdriver.Chrome(service=service)
+
+	startup_dva_site(driver)
+
+	auth_code = get_gmail_auth()
 
 	print("Submitting authorisation code.")
 	submit_auth_code(driver, auth_code)
-
-	time.sleep(1)
-	change_apt_button = driver.find_element(By.ID, 'btnChange')
-	change_apt_button.click()
-
 	time.sleep(1)
 
-	dropdown_button = driver.find_element(By.CLASS_NAME, 'btn.dropdown-toggle.btn-default.bs-placeholder')
-	dropdown_button.click()
+	click_btn(driver, 'btnChange')
+	time.sleep(1)
 
+	click_btn(driver, 'btn.dropdown-toggle.btn-default.bs-placeholder')
 	time.sleep(1)
 
 	cookstown_field = driver.find_element(By.ID, 'bs-select-1-6')
