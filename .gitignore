@@ -3,3 +3,4 @@ chromedriver.exe
 credentials.json
 LICENSE.chromedriver
 token.json
+sensitive_details.py
