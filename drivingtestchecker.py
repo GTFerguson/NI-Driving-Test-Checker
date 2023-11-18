@@ -91,7 +91,6 @@ def get_gmail_auth():
 # Finds a button by id and clicks it, just makes main cleaner
 def click_btn(d, btn_id):
 	d.find_element(By.ID, btn_id).click()
-	change_apt_button.click()
 
 if __name__ == "__main__":
 	print("Program Starting...")
