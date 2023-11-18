@@ -1,6 +1,7 @@
-
+__pycache__/
 chromedriver.exe
 credentials.json
 LICENSE.chromedriver
 token.json
 sensitive_details.py
+*.pyc
