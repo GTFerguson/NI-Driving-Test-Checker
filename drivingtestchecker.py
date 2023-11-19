@@ -14,24 +14,27 @@ date_format = '%d %B %Y'
 current_date = datetime.strptime('08 March 2024', date_format)
 
 
+# Finds a button by id and clicks it, just makes main cleaner
+def click_btn(d, btn_id):
+	d.find_element(By.ID, btn_id).click()
+
+
+def input_to_field(d, field, input):
+	d.find_element(By.ID, field).send_keys(input)
+
+
 def startup_dva_site(d):
 	# Navigate to the driving test website
 	d.get('https://dva-bookings.nidirect.gov.uk/MyBookings/FindDriver')
 	time.sleep(1)
 
-	# Find and interact with the necessary elements (replace these with actual element locators)
-	input_booking_reference = d.find_element(By.ID, 'BookingReference')
-	input_driver_no = d.find_element(By.ID, 'DriverNo')
-	input_dob = d.find_element(By.ID, 'dob')
-	submit_button = d.find_element(By.XPATH, '//button[@type="submit"]')
-
 	pd = PersonalDetails()
-	# Enter your login credentials and submit the form
-	input_booking_reference.send_keys(pd.booking_reference)
-	input_driver_no.send_keys(pd.driver_no)
-	input_dob.send_keys(pd.dob)
+	input_to_field(d, 'BookingReference', pd.booking_reference)
+	input_to_field(d, 'DriverNo', pd.driver_no)
+	input_to_field(d, 'dob', pd.dob)
 
 	time.sleep(1)
+	submit_button = d.find_element(By.XPATH, '//button[@type="submit"]')
 	submit_button.click()
 
 
@@ -45,31 +48,27 @@ def is_better_date(date):
 
 
 def submit_auth_code(d, a_code):
-	ipt_auth_code = d.find_element(By.ID, 'iptValidationCode')
+	input_to_field(d, 'iptValidationCode', a_code)
 	submit_button = d.find_element(By.XPATH, '//button[@type="submit"]')
-	ipt_auth_code.send_keys(a_code)
 	time.sleep(2)
 	submit_button.click()
 
 
 def reserve_date():
-	ctown_select = find_element(By.ID, 'bs-select-1-6')
-	ctown_select.click()
-	ipt_date = find_element(By.ID, 'group-day-0')
-	ipt_date.click()
+	click_btn(d, 'bs-select-1-6')
+	click_btn(d, 'group-day-0')
 	
 	ipt_time = None
-	# Start at 2 to get the latest time
+	# Start at 2 to try and get the latest time
 	ipt_time_pos = 2
 	while not ipt_time:
 		try:
 			ipt_time = find_element(By.ID, 'group-time-' + ipt_time_str)
 		except NoSuchElementException:
-			++ipt_time_pos
+			--ipt_time_pos
 
 	ipt_time.click()
-
-	reserve_btn = find_element(By.ID, 'reservebtn')	
+	click_btn(d, 'reservebtn')
 
 
 def get_gmail_auth():
@@ -80,7 +79,7 @@ def get_gmail_auth():
 	auth_code = None
 
 	while not latest_email:
-		time.sleep(5)
+		time.sleep(4)
 		print("Attempting to retrieve latest_email...")
 		latest_email = gmc.get_latest_email("noreply@infrastructure-ni.gov.uk")
 
@@ -88,15 +87,12 @@ def get_gmail_auth():
 	gmc.mark_as_read(latest_email[0]["id"])
 	return auth_code
 
-# Finds a button by id and clicks it, just makes main cleaner
-def click_btn(d, btn_id):
-	d.find_element(By.ID, btn_id).click()
 
 if __name__ == "__main__":
 	print("Program Starting...")
 	# Setup our Chrome driver for Selenium
 	driver_path = 'chromedriver.exe'
-	service = Service(driver_path)
+	service = Service(driver_path)s
 	driver = webdriver.Chrome(service=service)
 
 	startup_dva_site(driver)
