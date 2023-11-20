@@ -1,6 +1,10 @@
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException, NoSuchElementException
+
 import time
 import re
 from gmailchecker import GMailChecker
@@ -8,25 +12,40 @@ from datetime import datetime
 import phonehandler
 from sensitive_details import PersonalDetails
 
+#Constants
+WAIT_LIMIT = 20
 
 # Booking variables
 date_format = '%d %B %Y'
-current_date = datetime.strptime('08 March 2024', date_format)
+current_date = datetime.strptime('17 January 2024', date_format)
 
 
 # Finds a button by id and clicks it, just makes main cleaner
-def click_btn(d, btn_id):
-	d.find_element(By.ID, btn_id).click()
+def click_btn(d, selector, btn_id):
+	wait = WebDriverWait(driver, WAIT_LIMIT)
+	try:
+		btn = wait.until(EC.presence_of_element_located((selector, btn_id)))
+		btn.click()
+	except TimeoutException:
+		print('Could not locate ' + btn_id)
 
 
-def input_to_field(d, field, input):
-	d.find_element(By.ID, field).send_keys(input)
+def input_to_field(d, field_id, input):
+	wait = WebDriverWait(driver, WAIT_LIMIT)
+	try:
+		ipt_field = wait.until(EC.presence_of_element_located((By.ID, field_id)))
+		ipt_field.send_keys(input)
+	except TimeoutException:
+		print('Could not locate ' + btn_id)
 
 
 def startup_dva_site(d):
 	# Navigate to the driving test website
 	d.get('https://dva-bookings.nidirect.gov.uk/MyBookings/FindDriver')
-	time.sleep(1)
+
+	queue_url_start = 'https://dva.queue-it.net'
+	expected_url_start = 'https://dva-bookings.nidirect.gov.uk'
+	WebDriverWait(driver, 1800).until(lambda driver: expected_url_start in driver.current_url)
 
 	pd = PersonalDetails()
 	input_to_field(d, 'BookingReference', pd.booking_reference)
@@ -54,21 +73,21 @@ def submit_auth_code(d, a_code):
 	submit_button.click()
 
 
-def reserve_date():
-	click_btn(d, 'bs-select-1-6')
-	click_btn(d, 'group-day-0')
+def reserve_date(d):
+	click_btn(d, By.ID, 'bs-select-1-6')
+	click_btn(d, By.ID, 'group-day-0')
 	
 	ipt_time = None
 	# Start at 2 to try and get the latest time
 	ipt_time_pos = 2
 	while not ipt_time:
 		try:
-			ipt_time = find_element(By.ID, 'group-time-' + ipt_time_str)
+			ipt_time = d.find_element(By.ID, 'group-time-' + ipt_time_str)
 		except NoSuchElementException:
 			--ipt_time_pos
 
 	ipt_time.click()
-	click_btn(d, 'reservebtn')
+	click_btn(d, By.ID, 'reservebtn')
 
 
 def get_gmail_auth():
@@ -92,9 +111,9 @@ if __name__ == "__main__":
 	print("Program Starting...")
 	# Setup our Chrome driver for Selenium
 	driver_path = 'chromedriver.exe'
-	service = Service(driver_path)s
+	service = Service(driver_path)
 	driver = webdriver.Chrome(service=service)
-
+	
 	startup_dva_site(driver)
 
 	auth_code = get_gmail_auth()
@@ -103,14 +122,13 @@ if __name__ == "__main__":
 	submit_auth_code(driver, auth_code)
 	time.sleep(1)
 
-	click_btn(driver, 'btnChange')
+	click_btn(driver, By.ID, 'btnChange')
 	time.sleep(1)
 
-	click_btn(driver, 'btn.dropdown-toggle.btn-default.bs-placeholder')
+	click_btn(driver, By.CLASS_NAME, 'btn.dropdown-toggle.btn-default.bs-placeholder')
 	time.sleep(1)
 
 	cookstown_field = driver.find_element(By.ID, 'bs-select-1-6')
-
 	# Use a regular expression to extract the date
 	date_match = re.search(r'\d+ \w+ \d{4}', cookstown_field.text)
 
@@ -121,7 +139,7 @@ if __name__ == "__main__":
 		print("Date:", date)
 
 		if is_better_date(datetime.strptime(date, date_format)):
-			reserve_date()
+			reserve_date(driver)
 			print("Better date found, calling user...")
 			call_me()
 		else:
